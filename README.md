@@ -1,3 +1,9 @@
+training script:
+```
+./tools/dist_train.sh configs/imvoxelnet/imvoxelnet_4x2_scannet-3d-1class.py 8
+```
+
+
 <div align="center">
   <img src="resources/mmdet3d-logo.png" width="600"/>
   <div>&nbsp;</div>
