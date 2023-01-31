@@ -1,17 +1,17 @@
 _base_ = [
-    '../_base_/datasets/scannet-3d-18class.py', '../_base_/models/votenet.py',
+    '../_base_/datasets/scannet-3d-1class.py', '../_base_/models/votenet.py',
     '../_base_/schedules/schedule_3x.py', '../_base_/default_runtime.py'
 ]
 
 # model settings
 model = dict(
     bbox_head=dict(
-        num_classes=18,
+        num_classes=1,
         bbox_coder=dict(
             type='PartialBinBasedBBoxCoder',
-            num_sizes=18,
+            num_sizes=1,
             num_dir_bins=1,
-            with_rot=False,
+            with_rot=True,
             mean_sizes=[[0.76966727, 0.8116021, 0.92573744],
                         [1.876858, 1.8425595, 1.1931566],
                         [0.61328, 0.6148609, 0.7182701],

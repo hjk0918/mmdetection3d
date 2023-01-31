@@ -21,18 +21,16 @@ class ScanNetData(object):
         self.root_dir = root_path
         self.split = split
         self.split_dir = osp.join(root_path)
-        # self.classes = [
-        #     'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
-        #     'bookshelf', 'picture', 'counter', 'desk', 'curtain',
-        #     'refrigerator', 'showercurtrain', 'toilet', 'sink', 'bathtub',
-        #     'garbagebin'
-        # ]
-        self.classes = ['object'] # NeRF-RPN
+        self.classes = [
+            'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
+            'bookshelf', 'picture', 'counter', 'desk', 'curtain',
+            'refrigerator', 'showercurtrain', 'toilet', 'sink', 'bathtub',
+            'garbagebin'
+        ]
         self.cat2label = {cat: self.classes.index(cat) for cat in self.classes}
         self.label2cat = {self.cat2label[t]: t for t in self.cat2label}
-        # self.cat_ids = np.array(
-        #     [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39])
-        self.cat_ids = np.array([1]) # NeRF-RPN
+        self.cat_ids = np.array(
+            [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39])
         self.cat_ids2class = {
             nyu40id: i
             for i, nyu40id in enumerate(list(self.cat_ids))
@@ -170,7 +168,7 @@ class ScanNetData(object):
                     unaligned_box = unaligned_box_label[:, :-1]
                     classes = aligned_box_label[:, -1]  # k
                     annotations['name'] = np.array([
-                        self.label2cat[self.cat_ids2class[classes[i]]]
+                        self.label2cat[self.cat_ids2class[classes[int(i)]]]
                         for i in range(annotations['gt_num'])
                     ])
                     # default names are given to aligned bbox for compatibility

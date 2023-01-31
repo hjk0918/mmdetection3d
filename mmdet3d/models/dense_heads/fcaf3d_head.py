@@ -56,7 +56,7 @@ class FCAF3DHead(BaseModule):
                  pts_assign_threshold,
                  pts_center_threshold,
                  center_loss=dict(type='CrossEntropyLoss', use_sigmoid=True),
-                 bbox_loss=dict(type='AxisAlignedIoULoss'),
+                 bbox_loss=dict(type='RotatedIoU3DLoss'),
                  cls_loss=dict(type='FocalLoss'),
                  train_cfg=None,
                  test_cfg=None,
@@ -168,12 +168,17 @@ class FCAF3DHead(BaseModule):
                 x = self._prune(x, prune_score)
 
             out = self.__getattr__(f'out_block_{i}')(x)
+            print('out:', self.check_nan(out))
             center_pred, bbox_pred, cls_pred, point, prune_score = \
                 self._forward_single(out, self.scales[i])
             center_preds.append(center_pred)
             bbox_preds.append(bbox_pred)
             cls_preds.append(cls_pred)
             points.append(point)
+        print('center_preds:', self.check_nan(center_preds))
+        print('bbox_preds:', self.check_nan(bbox_preds))
+        print('cls_preds:', self.check_nan(cls_preds))
+        print('points:', self.check_nan(points))
         return center_preds[::-1], bbox_preds[::-1], cls_preds[::-1], \
             points[::-1]
 
@@ -190,7 +195,11 @@ class FCAF3DHead(BaseModule):
         Returns:
             dict: Centerness, bbox and classification loss values.
         """
+        print('----start----')
+        print('x:', self.check_nan(x))
         center_preds, bbox_preds, cls_preds, points = self(x)
+        print('----end----')
+        
         return self._loss(center_preds, bbox_preds, cls_preds, points,
                           gt_bboxes, gt_labels, input_metas)
 
@@ -311,8 +320,7 @@ class FCAF3DHead(BaseModule):
             center_loss = self.center_loss(
                 pos_center_preds, pos_center_targets, avg_factor=n_pos)
             bbox_loss = self.bbox_loss(
-                self._bbox_to_loss(
-                    self._bbox_pred_to_bbox(pos_points, pos_bbox_preds)),
+                self._bbox_to_loss(self._bbox_pred_to_bbox(pos_points, pos_bbox_preds)),
                 self._bbox_to_loss(pos_bbox_targets),
                 weight=pos_center_targets.squeeze(1),
                 avg_factor=center_denorm)
@@ -341,6 +349,7 @@ class FCAF3DHead(BaseModule):
         Returns:
             dict: Centerness, bbox, and classification loss values.
         """
+
         center_losses, bbox_losses, cls_losses = [], [], []
         for i in range(len(input_metas)):
             center_loss, bbox_loss, cls_loss = self._loss_single(
@@ -354,10 +363,23 @@ class FCAF3DHead(BaseModule):
             center_losses.append(center_loss)
             bbox_losses.append(bbox_loss)
             cls_losses.append(cls_loss)
-        return dict(
+        
+        # raise ValueError('stop')
+        # print('----start----')
+        # print('center_preds:', self.check_nan(center_preds))
+        # print('bbox_preds:', self.check_nan(bbox_preds))
+        # print('cls_preds:', self.check_nan(cls_preds))
+        # print('points:', self.check_nan(points))
+        # print('center_losses', self.check_nan(center_losses))
+        # print('bbox_losses', self.check_nan(bbox_losses))
+        # print('cls_losses', self.check_nan(cls_losses))
+        # print('----end----')
+        
+        losses = dict(
             center_loss=torch.mean(torch.stack(center_losses)),
             bbox_loss=torch.mean(torch.stack(bbox_losses)),
             cls_loss=torch.mean(torch.stack(cls_losses)))
+        return losses
 
     def _get_bboxes_single(self, center_preds, bbox_preds, cls_preds, points,
                            input_meta):
@@ -461,6 +483,7 @@ class FCAF3DHead(BaseModule):
         if bbox_pred.shape[0] == 0:
             return bbox_pred
 
+        # dx_min, dx_max, dy_min, dy_max, dz_min, dz_max，a, q
         x_center = points[:, 0] + (bbox_pred[:, 1] - bbox_pred[:, 0]) / 2
         y_center = points[:, 1] + (bbox_pred[:, 3] - bbox_pred[:, 2]) / 2
         z_center = points[:, 2] + (bbox_pred[:, 5] - bbox_pred[:, 4]) / 2
@@ -611,8 +634,8 @@ class FCAF3DHead(BaseModule):
 
         center_targets = centerness[torch.arange(n_points), min_inds]
         bbox_targets = boxes[torch.arange(n_points), min_inds]
-        if not gt_bboxes.with_yaw:
-            bbox_targets = bbox_targets[:, :-1]
+        # if not gt_bboxes.with_yaw:
+        #     bbox_targets = bbox_targets[:, :-1] # RPN
         cls_targets = gt_labels[min_inds]
         cls_targets = torch.where(min_volumes == float_max, -1, cls_targets)
         return center_targets, bbox_targets, cls_targets
@@ -676,3 +699,17 @@ class FCAF3DHead(BaseModule):
             origin=(.5, .5, .5))
 
         return nms_bboxes, nms_scores, nms_labels
+
+    def check_nan(self, x):
+        if isinstance(x, list):
+            if len(x) > 0:
+                for item in x:
+                    if self.check_nan(item):
+                        return True
+                return False
+        elif isinstance(x, torch.Tensor):
+            return torch.isnan(x).any().item()
+        elif isinstance(x, ME.SparseTensor):
+            return torch.isnan(x.features).any().item()
+        else:
+            print('unknown type', type(x))

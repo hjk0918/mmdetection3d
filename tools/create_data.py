@@ -1,4 +1,5 @@
-# Copyright (c) OpenMMLab. All rights reserved.
+# python tools/create_data.py 3dfront --root-path ./data/3dfront --out-dir ./data/3dfront --extra-tag 3dfront
+# python tools/create_data.py hypersim --root-path ./data/hypersim --out-dir ./data/hypersim --extra-tag hypersim
 import argparse
 from os import path as osp
 
@@ -25,22 +26,9 @@ def kitti_data_prep(root_path,
         info_prefix (str): The prefix of info filenames.
         version (str): Dataset version.
         out_dir (str): Output directory of the groundtruth database info.
-        with_plane (bool, optional): Whether to use plane information.
-            Default: False.
     """
-    kitti.create_kitti_info_file(root_path, info_prefix, with_plane)
+    kitti.create_kitti_info_file(root_path, info_prefix)
     kitti.create_reduced_point_cloud(root_path, info_prefix)
-
-    info_train_path = osp.join(root_path, f'{info_prefix}_infos_train.pkl')
-    info_val_path = osp.join(root_path, f'{info_prefix}_infos_val.pkl')
-    info_trainval_path = osp.join(root_path,
-                                  f'{info_prefix}_infos_trainval.pkl')
-    info_test_path = osp.join(root_path, f'{info_prefix}_infos_test.pkl')
-    kitti.export_2d_annotation(root_path, info_train_path)
-    kitti.export_2d_annotation(root_path, info_val_path)
-    kitti.export_2d_annotation(root_path, info_trainval_path)
-    kitti.export_2d_annotation(root_path, info_test_path)
-
     create_groundtruth_database(
         'KittiDataset',
         root_path,
@@ -68,16 +56,12 @@ def nuscenes_data_prep(root_path,
         version (str): Dataset version.
         dataset_name (str): The dataset class name.
         out_dir (str): Output directory of the groundtruth database info.
-        max_sweeps (int, optional): Number of input consecutive frames.
-            Default: 10
+        max_sweeps (int): Number of input consecutive frames. Default: 10
     """
     nuscenes_converter.create_nuscenes_infos(
         root_path, info_prefix, version=version, max_sweeps=max_sweeps)
 
     if version == 'v1.0-test':
-        info_test_path = osp.join(root_path, f'{info_prefix}_infos_test.pkl')
-        nuscenes_converter.export_2d_annotation(
-            root_path, info_test_path, version=version)
         return
 
     info_train_path = osp.join(root_path, f'{info_prefix}_infos_train.pkl')
@@ -93,19 +77,36 @@ def nuscenes_data_prep(root_path,
 def lyft_data_prep(root_path, info_prefix, version, max_sweeps=10):
     """Prepare data related to Lyft dataset.
 
-    Related data consists of '.pkl' files recording basic infos.
-    Although the ground truth database and 2D annotations are not used in
-    Lyft, it can also be generated like nuScenes.
+    Related data consists of '.pkl' files recording basic infos,
+    and 2D annotations.
+    Although the ground truth database is not used in Lyft, it can also be
+    generated like nuScenes.
 
     Args:
         root_path (str): Path of dataset root.
         info_prefix (str): The prefix of info filenames.
         version (str): Dataset version.
-        max_sweeps (int, optional): Number of input consecutive frames.
-            Defaults to 10.
+        dataset_name (str): The dataset class name.
+        out_dir (str): Output directory of the groundtruth database info.
+            Not used here if the groundtruth database is not generated.
+        max_sweeps (int): Number of input consecutive frames. Default: 10
     """
     lyft_converter.create_lyft_infos(
         root_path, info_prefix, version=version, max_sweeps=max_sweeps)
+
+    if version == 'v1.01-test':
+        return
+
+    train_info_name = f'{info_prefix}_infos_train'
+    val_info_name = f'{info_prefix}_infos_val'
+
+    info_train_path = osp.join(root_path, f'{train_info_name}.pkl')
+    info_val_path = osp.join(root_path, f'{val_info_name}.pkl')
+
+    lyft_converter.export_2d_annotation(
+        root_path, info_train_path, version=version)
+    lyft_converter.export_2d_annotation(
+        root_path, info_val_path, version=version)
 
 
 def scannet_data_prep(root_path, info_prefix, out_dir, workers):
@@ -120,9 +121,8 @@ def scannet_data_prep(root_path, info_prefix, out_dir, workers):
     indoor.create_indoor_info_file(
         root_path, info_prefix, out_dir, workers=workers)
 
-
-def s3dis_data_prep(root_path, info_prefix, out_dir, workers):
-    """Prepare the info file for s3dis dataset.
+def front3d_data_prep(root_path, info_prefix, out_dir, workers):
+    """Prepare the info file for front3d dataset.
 
     Args:
         root_path (str): Path of dataset root.
@@ -133,8 +133,19 @@ def s3dis_data_prep(root_path, info_prefix, out_dir, workers):
     indoor.create_indoor_info_file(
         root_path, info_prefix, out_dir, workers=workers)
 
+def hypersim_data_prep(root_path, info_prefix, out_dir, workers):
+    """Prepare the info file for hypersim dataset.
 
-def sunrgbd_data_prep(root_path, info_prefix, out_dir, workers, num_points):
+    Args:
+        root_path (str): Path of dataset root.
+        info_prefix (str): The prefix of info filenames.
+        out_dir (str): Output directory of the generated info file.
+        workers (int): Number of threads to be used.
+    """
+    indoor.create_indoor_info_file(
+        root_path, info_prefix, out_dir, workers=workers)
+
+def sunrgbd_data_prep(root_path, info_prefix, out_dir, workers, monocular):
     """Prepare the info file for sunrgbd dataset.
 
     Args:
@@ -144,11 +155,7 @@ def sunrgbd_data_prep(root_path, info_prefix, out_dir, workers, num_points):
         workers (int): Number of threads to be used.
     """
     indoor.create_indoor_info_file(
-        root_path,
-        info_prefix,
-        out_dir,
-        workers=workers,
-        num_points=num_points)
+        root_path, info_prefix, out_dir, workers=workers, monocular=monocular)
 
 
 def waymo_data_prep(root_path,
@@ -164,9 +171,8 @@ def waymo_data_prep(root_path,
         info_prefix (str): The prefix of info filenames.
         out_dir (str): Output directory of the generated info file.
         workers (int): Number of threads to be used.
-        max_sweeps (int, optional): Number of input consecutive frames.
-            Default: 5. Here we store pose information of these frames
-            for later use.
+        max_sweeps (int): Number of input consecutive frames. Default: 5 \
+            Here we store pose information of these frames for later use.
     """
     from tools.data_converter import waymo_converter as waymo
 
@@ -182,20 +188,18 @@ def waymo_data_prep(root_path,
             save_dir,
             prefix=str(i),
             workers=workers,
-            test_mode=(split == 'testing'))
+            test_mode=(split == 'test'))
         converter.convert()
     # Generate waymo infos
     out_dir = osp.join(out_dir, 'kitti_format')
-    kitti.create_waymo_info_file(
-        out_dir, info_prefix, max_sweeps=max_sweeps, workers=workers)
-    GTDatabaseCreater(
+    kitti.create_waymo_info_file(out_dir, info_prefix, max_sweeps=max_sweeps)
+    create_groundtruth_database(
         'WaymoDataset',
         out_dir,
         info_prefix,
         f'{out_dir}/{info_prefix}_infos_train.pkl',
         relative_path=False,
-        with_mask=False,
-        num_worker=workers).create()
+        with_mask=False)
 
 
 parser = argparse.ArgumentParser(description='Data converter arg parser')
@@ -218,15 +222,6 @@ parser.add_argument(
     required=False,
     help='specify sweeps of lidar per example')
 parser.add_argument(
-    '--with-plane',
-    action='store_true',
-    help='Whether to use plane information for kitti.')
-parser.add_argument(
-    '--num-points',
-    type=int,
-    default=-1,
-    help='Number of points to sample for indoor datasets.')
-parser.add_argument(
     '--out-dir',
     type=str,
     default='./data/kitti',
@@ -243,8 +238,7 @@ if __name__ == '__main__':
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             version=args.version,
-            out_dir=args.out_dir,
-            with_plane=args.with_plane)
+            out_dir=args.out_dir)
     elif args.dataset == 'nuscenes' and args.version != 'v1.0-mini':
         train_version = f'{args.version}-trainval'
         nuscenes_data_prep(
@@ -277,12 +271,16 @@ if __name__ == '__main__':
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             version=train_version,
+            dataset_name='LyftDataset',
+            out_dir=args.out_dir,
             max_sweeps=args.max_sweeps)
         test_version = f'{args.version}-test'
         lyft_data_prep(
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             version=test_version,
+            dataset_name='LyftDataset',
+            out_dir=args.out_dir,
             max_sweeps=args.max_sweeps)
     elif args.dataset == 'waymo':
         waymo_data_prep(
@@ -297,17 +295,35 @@ if __name__ == '__main__':
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             out_dir=args.out_dir,
-            workers=args.workers)
-    elif args.dataset == 's3dis':
-        s3dis_data_prep(
-            root_path=args.root_path,
-            info_prefix=args.extra_tag,
-            out_dir=args.out_dir,
-            workers=args.workers)
+            workers=args.workers
+        )
     elif args.dataset == 'sunrgbd':
         sunrgbd_data_prep(
             root_path=args.root_path,
             info_prefix=args.extra_tag,
-            num_points=args.num_points,
             out_dir=args.out_dir,
-            workers=args.workers)
+            workers=args.workers,
+            monocular=False
+        )
+    elif args.dataset == 'sunrgbd_monocular':
+        sunrgbd_data_prep(
+            root_path=args.root_path,
+            info_prefix=args.extra_tag,
+            out_dir=args.out_dir,
+            workers=args.workers,
+            monocular=True
+        )
+    elif args.dataset == '3dfront':
+        front3d_data_prep(
+            root_path=args.root_path,
+            info_prefix=args.extra_tag,
+            out_dir=args.out_dir,
+            workers=args.workers,
+        )
+    elif args.dataset == 'hypersim':
+        hypersim_data_prep(
+            root_path=args.root_path,
+            info_prefix=args.extra_tag,
+            out_dir=args.out_dir,
+            workers=args.workers,
+        )

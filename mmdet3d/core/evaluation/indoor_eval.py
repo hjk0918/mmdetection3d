@@ -151,7 +151,7 @@ def eval_det_cls(pred, gt, iou_thr=None):
         # compute precision recall
         fp = np.cumsum(fp_thr[iou_idx])
         tp = np.cumsum(tp_thr[iou_idx])
-        recall = tp / float(npos)
+        recall = tp / float(npos+1e-6)
         # avoid divide by zero in case the first detection matches a difficult
         # ground truth
         precision = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
@@ -260,8 +260,11 @@ def indoor_eval(gt_annos,
             gt_boxes = box_type_3d(np.array([], dtype=np.float32))
             labels_3d = np.array([], dtype=np.int64)
 
+        labels_3d = np.zeros_like(labels_3d)  # RPN
+        labels_3d.setflags(write=False)
         for i in range(len(labels_3d)):
             label = labels_3d[i]
+            # label = np.zeros_like(label) # RPN
             bbox = gt_boxes[i]
             if label not in gt:
                 gt[label] = {}

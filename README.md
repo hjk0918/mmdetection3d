@@ -1,6 +1,33 @@
 training script:
 ```
-./tools/dist_train.sh configs/imvoxelnet/imvoxelnet_4x2_scannet-3d-1class.py 8
+CUDA_VISIBLE_DEVICES=1 ./tools/dist_train.sh configs/fcaf3d/fcaf3d_2x8_3dfront-3d-1class.py 1
+```
+```
+CUDA_VISIBLE_DEVICES=1,2,3,4,5,6,7,8 ./tools/dist_train.sh configs/fcaf3d/fcaf3d_2x8_3dfront-3d-1class.py 8
+```
+
+ScanNet extracted dataset directory:
+```
+/fast_data/jhuangce/mmdetection3d/data/scannet
+
+scannet
+├── scans
+├── meta_data
+├── scannet_instance_data
+├── points
+│   ├── xxxxx.bin
+├── instance_mask
+│   ├── xxxxx.bin
+├── semantic_mask
+│   ├── xxxxx.bin
+├── posed_images
+│   ├── scenexxxx_xx
+│   │   ├── xxxxxx.txt
+│   │   ├── xxxxxx.jpg
+│   │   ├── intrinsic.txt
+├── scannet_infos_train.pkl
+├── scannet_infos_val.pkl
+├── scannet_infos_test.pkl
 ```
 
 

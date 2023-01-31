@@ -9,7 +9,20 @@ except ImportError:
 from mmdet3d.core import bbox3d2result
 from mmdet3d.models import DETECTORS, build_backbone, build_head
 from .base import Base3DDetector
+import torch
 
+def check_nan(x):
+    if isinstance(x, list):
+        if len(x) > 0:
+            sum = 0
+            for item in x:
+                sum += check_nan(item)
+            return sum
+    elif isinstance(x, torch.Tensor):
+        return torch.isnan(x).sum().item()
+    else:
+        print('unknown type', type(x))
+        return 0
 
 @DETECTORS.register_module()
 class MinkSingleStage3DDetector(Base3DDetector):
@@ -43,7 +56,7 @@ class MinkSingleStage3DDetector(Base3DDetector):
         self.head = build_head(head)
         self.voxel_size = voxel_size
         self.init_weights()
-
+    
     def extract_feat(self, points):
         """Extract features from points.
 
@@ -53,12 +66,23 @@ class MinkSingleStage3DDetector(Base3DDetector):
         Returns:
             SparseTensor: Voxelized point clouds.
         """
+        print('points', check_nan(points))
+        print('points_left', check_nan(points[0][:, :3]))
+        print('points_right', check_nan(points[0][:, 3:]))
+        print(len(points))
+
         coordinates, features = ME.utils.batch_sparse_collate(
             [(p[:, :3] / self.voxel_size, p[:, 3:]) for p in points],
             device=points[0].device)
+        print('coordinates', check_nan(coordinates))
+        print('features', check_nan(features))
+
         x = ME.SparseTensor(coordinates=coordinates, features=features)
         x = self.backbone(x)
+        exit()
         return x
+    
+    
 
     def forward_train(self, points, gt_bboxes_3d, gt_labels_3d, img_metas):
         """Forward of training.
@@ -107,3 +131,18 @@ class MinkSingleStage3DDetector(Base3DDetector):
             list[dict]: Predicted 3d boxes.
         """
         raise NotImplementedError
+    
+    
+    def check_nan(self, x):
+        if isinstance(x, list):
+            if len(x) > 0:
+                for item in x:
+                    if self.check_nan(item):
+                        return True
+                return False
+        elif isinstance(x, torch.Tensor):
+            return torch.isnan(x).any().item()
+        elif isinstance(x, ME.SparseTensor):
+            return torch.isnan(x.features).any().item() or torch.isnan(x.coordinates).any().item()
+        else:
+            print('unknown type', type(x))

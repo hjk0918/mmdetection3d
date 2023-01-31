@@ -10,7 +10,7 @@ model = dict(
         pts_prune_threshold=100000,
         pts_assign_threshold=27,
         pts_center_threshold=18,
-        n_classes=18,
-        n_reg_outs=6),
+        n_classes=1,
+        n_reg_outs=8),
     train_cfg=dict(),
     test_cfg=dict(nms_pre=1000, iou_thr=.5, score_thr=.01))
