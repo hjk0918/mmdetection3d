@@ -90,6 +90,17 @@ class HypersimData(object):
         def process_single_scene(sample_idx):
             print(f'{self.split} sample_idx: {sample_idx}')
             info = dict()
+            pc_info = {'num_features': 6, 'lidar_idx': sample_idx}
+            info['point_cloud'] = pc_info
+            pts_filename = osp.join(self.root_dir, 'hypersim_point_cloud_scaled',
+                                    f'{sample_idx}.npy')
+            points = np.load(pts_filename)
+            mmcv.mkdir_or_exist(osp.join(self.root_dir, 'points'))
+            points.tofile(
+                osp.join(self.root_dir, 'points', f'{sample_idx}.bin'))
+            # info['pts_path'] = osp.join('points', f'{sample_idx}.bin')
+            info['pts_path'] = osp.join('hypersim_point_cloud_scaled', 
+                                        f'{sample_idx}.npy')
 
             # update with RGB image paths if exist
             if os.path.exists(osp.join(self.root_dir, 'posed_images')):
@@ -116,6 +127,7 @@ class HypersimData(object):
                     aligned_box = aligned_box_label[:, :-1]  # k, 7
                     # unaligned_box = unaligned_box_label[:, :-1]
                     classes = aligned_box_label[:, -1]  # k
+                    classes = np.zeros_like(classes) # RPN
                     annotations['name'] = np.array([
                         self.label2cat[self.cat_ids2class[int(classes[int(i)])]]
                         for i in range(annotations['gt_num'])

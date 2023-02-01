@@ -168,17 +168,17 @@ class FCAF3DHead(BaseModule):
                 x = self._prune(x, prune_score)
 
             out = self.__getattr__(f'out_block_{i}')(x)
-            print('out:', self.check_nan(out))
+            # print('out:', self.check_nan(out))
             center_pred, bbox_pred, cls_pred, point, prune_score = \
                 self._forward_single(out, self.scales[i])
             center_preds.append(center_pred)
             bbox_preds.append(bbox_pred)
             cls_preds.append(cls_pred)
             points.append(point)
-        print('center_preds:', self.check_nan(center_preds))
-        print('bbox_preds:', self.check_nan(bbox_preds))
-        print('cls_preds:', self.check_nan(cls_preds))
-        print('points:', self.check_nan(points))
+        # print('center_preds:', self.check_nan(center_preds))
+        # print('bbox_preds:', self.check_nan(bbox_preds))
+        # print('cls_preds:', self.check_nan(cls_preds))
+        # print('points:', self.check_nan(points))
         return center_preds[::-1], bbox_preds[::-1], cls_preds[::-1], \
             points[::-1]
 
@@ -195,10 +195,10 @@ class FCAF3DHead(BaseModule):
         Returns:
             dict: Centerness, bbox and classification loss values.
         """
-        print('----start----')
-        print('x:', self.check_nan(x))
+        # print('----start----')
+        # print('x:', self.check_nan(x))
         center_preds, bbox_preds, cls_preds, points = self(x)
-        print('----end----')
+        # print('----end----')
         
         return self._loss(center_preds, bbox_preds, cls_preds, points,
                           gt_bboxes, gt_labels, input_metas)

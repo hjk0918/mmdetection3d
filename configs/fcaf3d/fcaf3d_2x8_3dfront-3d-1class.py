@@ -1,5 +1,5 @@
 _base_ = ['../_base_/models/fcaf3d.py', '../_base_/default_runtime.py']
-n_points = 10000
+n_points = 50000
 
 dataset_type = 'Front3dDatasetRPN'
 data_root = './data/3dfront/'
@@ -7,13 +7,19 @@ class_names = ('object',)
 train_pipeline = [
     dict(
         type='LoadPointsFromFile',
-        coord_type='LIDAR',
+        coord_type='DEPTH',
         shift_height=False,
         use_color=True,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5]),
-    dict(type='LoadAnnotations3D'),
-    dict(type='GlobalAlignment', rotation_axis=2),
+    dict(
+        type='LoadAnnotations3D',
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_mask_3d=False,
+        with_seg_3d=False
+    ),
+    # dict(type='GlobalAlignment', rotation_axis=2),
     dict(type='PointSample', num_points=n_points),
     dict(
         type='RandomFlip3D',
@@ -89,13 +95,13 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + '3dfront_infos_val.pkl',
+        ann_file=data_root + '3dfront_infos_test.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         box_type_3d='Depth'))
 
-optimizer = dict(type='AdamW', lr=1e-5, weight_decay=1e-7)
+optimizer = dict(type='AdamW', lr=2e-3, weight_decay=1e-7)
 optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
 lr_config = dict(policy='step', warmup=None, step=[8, 11])
 runner = dict(type='EpochBasedRunner', max_epochs=12)

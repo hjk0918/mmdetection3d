@@ -1,5 +1,6 @@
 # python tools/create_data.py 3dfront --root-path ./data/3dfront --out-dir ./data/3dfront --extra-tag 3dfront
 # python tools/create_data.py hypersim --root-path ./data/hypersim --out-dir ./data/hypersim --extra-tag hypersim
+# python tools/create_data.py scannet --root-path ./data/scannet --out-dir ./data/scannet --extra-tag scannet
 import argparse
 from os import path as osp
 

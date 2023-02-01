@@ -66,20 +66,20 @@ class MinkSingleStage3DDetector(Base3DDetector):
         Returns:
             SparseTensor: Voxelized point clouds.
         """
-        print('points', check_nan(points))
-        print('points_left', check_nan(points[0][:, :3]))
-        print('points_right', check_nan(points[0][:, 3:]))
-        print(len(points))
+        # print('points', check_nan(points))
+        # print('points_left', check_nan(points[0][:, :3]))
+        # print('points_right', check_nan(points[0][:, 3:]))
+        # print(len(points))
 
         coordinates, features = ME.utils.batch_sparse_collate(
             [(p[:, :3] / self.voxel_size, p[:, 3:]) for p in points],
             device=points[0].device)
-        print('coordinates', check_nan(coordinates))
-        print('features', check_nan(features))
+        # print('coordinates', check_nan(coordinates))
+        # print('features', check_nan(features))
 
         x = ME.SparseTensor(coordinates=coordinates, features=features)
         x = self.backbone(x)
-        exit()
+        # exit()
         return x
     
     

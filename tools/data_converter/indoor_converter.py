@@ -1,7 +1,7 @@
 import mmcv
 import os
 
-from tools.data_converter.scannet_data_utils import ScanNetData
+from tools.data_converter.scannet_data_utils import ScanNetData, ScanNetRPNData
 from tools.data_converter.sunrgbd_data_utils import SUNRGBDData
 from tools.data_converter.front3d_data_utils import Front3dData
 from tools.data_converter.hypersim_data_utils import HypersimData
@@ -38,7 +38,7 @@ def create_indoor_info_file(data_path,
         val_dataset = SUNRGBDData(
             root_path=data_path, split='val', use_v1=use_v1, monocular=monocular)
     elif pkl_prefix == 'scannet':
-        dataset = ScanNetData
+        dataset = ScanNetRPNData
         train_dataset = dataset(root_path=data_path, split='train')
         val_dataset = dataset(root_path=data_path, split='val')
         test_dataset = dataset(root_path=data_path, split='test')

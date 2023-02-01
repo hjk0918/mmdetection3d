@@ -1,8 +1,8 @@
 _base_ = ['../_base_/models/fcaf3d.py', '../_base_/default_runtime.py']
-n_points = 50000
+n_points = 10000
 
-dataset_type = 'ScanNetDatasetRPN'
-data_root = './data/scannet/'
+dataset_type = 'Front3dDatasetRPN'
+data_root = './data/hypersim/'
 class_names = ('object',)
 train_pipeline = [
     dict(
@@ -12,8 +12,14 @@ train_pipeline = [
         use_color=True,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5]),
-    dict(type='LoadAnnotations3D'),
-    dict(type='GlobalAlignment', rotation_axis=2),
+    dict(
+        type='LoadAnnotations3D',
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_mask_3d=False,
+        with_seg_3d=False
+    ),
+    # dict(type='GlobalAlignment', rotation_axis=2),
     dict(type='PointSample', num_points=n_points),
     dict(
         type='RandomFlip3D',
@@ -65,15 +71,15 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=4,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=1,
     train=dict(
         type='RepeatDataset',
         times=10,
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
-            ann_file=data_root + 'scannet_infos_train.pkl',
+            ann_file=data_root + 'hypersim_infos_train.pkl',
             pipeline=train_pipeline,
             filter_empty_gt=True,
             classes=class_names,
@@ -81,7 +87,7 @@ data = dict(
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_val.pkl',
+        ann_file=data_root + 'hypersim_infos_val.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
@@ -89,13 +95,13 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file=data_root + 'scannet_infos_test.pkl',
+        ann_file=data_root + 'hypersim_infos_test.pkl',
         pipeline=test_pipeline,
         classes=class_names,
         test_mode=True,
         box_type_3d='Depth'))
 
-optimizer = dict(type='AdamW', lr=0.002, weight_decay=0.0001)
+optimizer = dict(type='AdamW', lr=1e-3, weight_decay=1e-7)
 optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
 lr_config = dict(policy='step', warmup=None, step=[8, 11])
 runner = dict(type='EpochBasedRunner', max_epochs=12)

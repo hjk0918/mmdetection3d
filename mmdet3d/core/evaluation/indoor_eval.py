@@ -277,6 +277,7 @@ def indoor_eval(gt_annos,
     header = ['classes']
     table_columns = [[label2cat[label]
                       for label in ap[0].keys()] + ['Overall']]
+    # table_columns = [['object'] + ['Overall']]
 
     for i, iou_thresh in enumerate(metric):
         header.append(f'AP_{iou_thresh:.2f}')

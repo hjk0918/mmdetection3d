@@ -98,7 +98,8 @@ class Front3dData(object):
             mmcv.mkdir_or_exist(osp.join(self.root_dir, 'points'))
             points.tofile(
                 osp.join(self.root_dir, 'points', f'{sample_idx}.bin'))
-            info['pts_path'] = osp.join('points', f'{sample_idx}.bin')
+            # info['pts_path'] = osp.join('points', f'{sample_idx}.bin')
+            info['pts_path'] = osp.join('3dfront_pc', f'{sample_idx}.npy')
 
             # update with RGB image paths if exist
             if os.path.exists(osp.join(self.root_dir, 'posed_images')):

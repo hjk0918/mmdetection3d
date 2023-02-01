@@ -31,13 +31,15 @@ try:
     from mmdet.utils import compat_cfg
 except ImportError:
     from mmdet3d.utils import compat_cfg
-
+import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--num_boxes', type=int, default=15)
+    parser.add_argument('--rpn_output', type=str, default='')
     parser.add_argument('--out', help='output result file in pickle format')
     parser.add_argument(
         '--fuse-conv-bn',
@@ -139,8 +141,8 @@ def main():
     if args.eval and args.format_only:
         raise ValueError('--eval and --format_only cannot be both specified')
 
-    if args.out is not None and not args.out.endswith(('.pkl', '.pickle')):
-        raise ValueError('The output file must be a pkl file.')
+    # if args.out is not None and not args.out.endswith(('.pkl', '.pickle')):
+    #     raise ValueError('The output file must be a pkl file.')
 
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
@@ -235,6 +237,20 @@ def main():
             broadcast_buffers=False)
         outputs = multi_gpu_test(model, data_loader, args.tmpdir,
                                  args.gpu_collect)
+
+    if args.rpn_output!='':
+        os.makedirs(args.rpn_output, exist_ok=True)
+        num_scenes = len(outputs)
+        for idx in range(0, num_scenes):
+            scene_name = dataset.get_data_info(idx)['sample_idx']
+            print(scene_name)
+            boxes_3d = outputs[idx]['boxes_3d'][:args.num_boxes]
+            obb = [np.array(x) for x in boxes_3d] # 
+            obb = np.stack(obb, axis=0)
+            if 'hypersim' in args.rpn_output:
+                obb[:, :6] *= 200
+            np.save(os.path.join(args.rpn_output, scene_name+'.npy'), obb)
+        exit()
 
     rank, _ = get_dist_info()
     if rank == 0:
